@@ -3,7 +3,7 @@
 
 namespace Util {
 
-  double randInterval(double s, double e);
-  double gaussianSample(double mean, double sd);
+  double RandInterval(double s, double e);
+  double GaussianSample(double mean, double sd);
 
 }

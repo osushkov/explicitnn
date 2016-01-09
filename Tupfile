@@ -1,2 +1,2 @@
 include_rules
-: src/*.o src/util/util.a |> $(CC) %f -o %o $(CLFLAGS) |> enn
+: src/*.o src/neuralnetwork/nn.a src/util/util.a  |> $(CC) %f -o %o $(CLFLAGS) |> enn
