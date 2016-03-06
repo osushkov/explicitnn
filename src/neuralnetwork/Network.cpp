@@ -59,8 +59,8 @@ struct Network::NetworkImpl {
     }
   }
 
-  vector<double> Process(const vector<double> &input) {
-    vector<double> result;
+  vector<float> Process(const vector<float> &input) {
+    vector<float> result;
 
     for (auto& layer : layers) {
       if (layer.type == NeuronType::INPUT) {
@@ -86,12 +86,12 @@ struct Network::NetworkImpl {
     return result;
   }
 
-  void Train(const vector<TrainingSample> &samples, double learnRate) {
+  void Train(const vector<TrainingSample> &samples, float learnRate) {
     for (const auto &sample : samples) {
       processSample(sample);
     }
 
-    double normScale = 1.0 / samples.size();
+    float normScale = 1.0f / samples.size();
     for (auto& layer : layers) {
       if (layer.type != NeuronType::INPUT) {
         for_each(layer.neurons, [=] (sptr<Neuron> neuron) {
@@ -102,7 +102,7 @@ struct Network::NetworkImpl {
   }
 
   void processSample(const TrainingSample &sample) {
-    vector<double> output = Process(sample.input);
+    vector<float> output = Process(sample.input);
     Layer &outputLayer = layers[layers.size() - 1];
 
     assert(outputLayer.type == NeuronType::OUTPUT);
@@ -110,9 +110,9 @@ struct Network::NetworkImpl {
     assert(output.size() == sample.expectedOutput.size());
 
     for (unsigned i = 0; i < output.size(); i++) {
-      double o = output[i];
-      // double delta = o * (1.0 - o) * (o - sample.expectedOutput[i]);
-      double delta = (o - sample.expectedOutput[i]);
+      float o = output[i];
+      // float delta = o * (1.0 - o) * (o - sample.expectedOutput[i]);
+      float delta = (o - sample.expectedOutput[i]);
       outputLayer.neurons[i]->SetError(delta);
     }
 
@@ -126,13 +126,26 @@ struct Network::NetworkImpl {
 Network::Network(const vector<unsigned> &layerSizes) : impl(new NetworkImpl(layerSizes)) {}
 Network::~Network() = default;
 
-vector<double> Network::Process(const vector<double> &input) {
+vector<float> Network::Process(const vector<float> &input) {
   return impl->Process(input);
 }
 
-void Network::Train(const vector<TrainingSample> &samples, double learnRate) {
-  assert(learnRate >= 0.0 && learnRate <= 1.0);
+void Network::Train(const vector<TrainingSample> &samples, float learnRate) {
+  assert(learnRate >= 0.0f && learnRate <= 1.0f);
   impl->Train(samples, learnRate);
+}
+
+std::ostream& Network::Output(std::ostream& stream) {
+  for (auto& layer : impl->layers) {
+    if (layer.type != NeuronType::INPUT) {
+      for (auto& n : layer.neurons) {
+        n->Output(stream);
+        stream << endl;
+      }
+      stream << endl;
+    }
+  }
+  return stream;
 }
 
 std::ostream& operator<<(std::ostream& stream, const TrainingSample& ts) {

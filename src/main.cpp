@@ -9,17 +9,17 @@
 
 using namespace std;
 
-vector<TrainingSample> getTrainingData(void) {
+vector<TrainingSample> getTrainingData(unsigned howMany) {
   vector<TrainingSample> trainingData;
 
-  double centreX = 0.75, centreY = 0.6;
-  double radius = 0.5;
-  for (unsigned i = 0; i < 20; i++) {
-    double x = Util::RandInterval(-1.0, 1.0);
-    double y = Util::RandInterval(-1.0, 1.0);
+  float centreX = 0.75f, centreY = 0.6f;
+  float radius = 0.4f;
+  for (unsigned i = 0; i < howMany; i++) {
+    float x = Util::RandInterval(-1.0, 1.0);
+    float y = Util::RandInterval(-1.0, 1.0);
 
-    double d = sqrt((x - centreX) * (x - centreX) + (y - centreY) * (y - centreY));
-    double r = d < radius ? 1.0 : 0.0;
+    float d = sqrt((x - centreX) * (x - centreX) + (y - centreY) * (y - centreY));
+    float r = d < radius ? 1.0f : 0.0f;
 
     trainingData.push_back(TrainingSample{{x, y}, {r}});
   }
@@ -33,11 +33,11 @@ vector<TrainingSample> getTrainingData(void) {
 
 
 void trainNetwork(Network &network, const std::vector<TrainingSample> &trainingSamples, unsigned iterations) {
-  double startLearningRate = 0.2;
-  double endLearningRate = 0.01;
+  float startLearningRate = 0.2;
+  float endLearningRate = 0.01;
 
   for (unsigned i = 0; i < iterations; i++) {
-    double lr = startLearningRate + (endLearningRate - startLearningRate) * i / (double)iterations;
+    float lr = startLearningRate + (endLearningRate - startLearningRate) * i / (float)iterations;
     network.Train(trainingSamples, lr);
   }
 }
@@ -47,16 +47,22 @@ void evaluateNetwork(Network &network, const std::vector<TrainingSample> &evalSa
     auto result = network.Process(es.input);
     cout << es << " -> ";
     for (auto v : result) {
-      cout << (v > 0.5) << " ";
+      cout << v << " ";
     }
     cout << endl;
   }
 }
 
 int main() {
+  srand(1234);
+
   Network network({2, 3, 1});
-  vector<TrainingSample> td = getTrainingData();
-  trainNetwork(network, td, 10000);
-  evaluateNetwork(network, td);
+
+  vector<TrainingSample> trainingSamples = getTrainingData(500);
+  trainNetwork(network, trainingSamples, 1000);
+
+  vector<TrainingSample> evalSamples = getTrainingData(200);
+  evaluateNetwork(network, evalSamples);
+
   return 0;
 }

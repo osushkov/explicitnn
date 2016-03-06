@@ -13,17 +13,17 @@ struct IncomingConnection {
   bool isBias;
 
   wptr<Neuron> neuron;
-  double weight;
+  float weight;
 
-  double weightGradient; // derr/dweight
+  float weightGradient; // derr/dweight
 
-  IncomingConnection(wptr<Neuron> neuron, double weight) :
-      isBias(false), neuron(neuron), weight(weight), weightGradient(0.0) {}
+  IncomingConnection(wptr<Neuron> neuron, float weight) :
+      isBias(false), neuron(neuron), weight(weight), weightGradient(0.0f) {}
 
-  IncomingConnection(double weight) :
-      isBias(true), weight(weight), weightGradient(0.0) {}
+  IncomingConnection(float weight) :
+      isBias(true), weight(weight), weightGradient(0.0f) {}
 
-  double CalculateValue(void) const {
+  float CalculateValue(void) const {
     if (isBias) {
       return weight;
     } else {
@@ -34,7 +34,7 @@ struct IncomingConnection {
     }
   }
 
-  double GetOutput(void) {
+  float GetOutput(void) {
     if (isBias) {
       return 1.0;
     } else {
@@ -48,7 +48,7 @@ struct IncomingConnection {
 
 
 struct Neuron::NeuronImpl {
-  const double INIT_RANGE = 0.5;
+  const float INIT_RANGE = 0.1f;
 
   Neuron *thisNeuron;
 
@@ -56,19 +56,19 @@ struct Neuron::NeuronImpl {
   vector<IncomingConnection> incoming;
   vector<wptr<Neuron>> outgoingNeurons;
 
-  double input;
-  double output;
-  double error;
+  float input;
+  float output;
+  float error;
 
 
   NeuronImpl(Neuron *thisNeuron, NeuronType type) : thisNeuron(thisNeuron), type(type) {
     assert(thisNeuron != nullptr);
-    incoming.emplace_back(Util::RandInterval(-INIT_RANGE, INIT_RANGE)); // Add the bias input.
+    incoming.emplace_back(INIT_RANGE); //Util::RandInterval(-INIT_RANGE, INIT_RANGE)); // Add the bias input.
   }
 
   void AddIncomingNeuron(wptr<Neuron> neuron) {
     assert(neuron.lock());
-    incoming.emplace_back(neuron, Util::RandInterval(-INIT_RANGE, INIT_RANGE));
+    incoming.emplace_back(neuron, INIT_RANGE) ;//Util::RandInterval(-INIT_RANGE, INIT_RANGE));
   }
 
   void AddOutgoingNeuron(wptr<Neuron> neuron) {
@@ -76,12 +76,12 @@ struct Neuron::NeuronImpl {
     outgoingNeurons.push_back(neuron);
   }
 
-  void UpdateWeights(double normScale, double rate) {
+  void UpdateWeights(float normScale, float rate) {
     if (type != NeuronType::INPUT) {
       for_each(incoming, [normScale, rate] (IncomingConnection &connection) {
-        double gradient = connection.weightGradient * normScale;
+        float gradient = connection.weightGradient * normScale;
         connection.weight -= gradient * rate;
-        connection.weightGradient = 0.0;
+        connection.weightGradient = 0.0f;
       });
     }
   }
@@ -106,21 +106,21 @@ struct Neuron::NeuronImpl {
     if (type == NeuronType::INPUT) {
       this->output = input;
     } else {
-      double z = calculateZ();
+      float z = calculateZ();
       this->output = activationFunction(z);
     }
   }
 
-  void SetInput(double input) {
+  void SetInput(float input) {
     assert(type == NeuronType::INPUT);
     this->input = input;
   }
 
-  void SetError(double error) {
+  void SetError(float error) {
     this->error = error;
   }
 
-  double GetInputWeight(Neuron *target) const {
+  float GetInputWeight(Neuron *target) const {
     Maybe<IncomingConnection> connection = find_if(incoming, [target] (const IncomingConnection c) {
       if (c.isBias) {
         return false;
@@ -133,17 +133,17 @@ struct Neuron::NeuronImpl {
     return connection.val().weight;
   }
 
-  double GetOutput(void) const {
+  float GetOutput(void) const {
     return output;
   }
 
-  double GetError(void) const {
+  float GetError(void) const {
     return error;
   }
 
 
-  double calculateError(void) {
-    double outErrorSum = 0.0;
+  float calculateError(void) {
+    float outErrorSum = 0.0;
     for (auto& connection : outgoingNeurons) {
       sptr<Neuron> neuron = connection.lock();
       assert(neuron);
@@ -154,16 +154,16 @@ struct Neuron::NeuronImpl {
     return this->output * (1.0 - this->output) * outErrorSum;
   }
 
-  double calculateZ(void) {
-    double z = 0.0;
+  float calculateZ(void) {
+    float z = 0.0f;
     for (const auto& connection : incoming) {
       z += connection.CalculateValue();
     }
     return z;
   }
 
-  double activationFunction(double in) {
-    return 1.0 / (1.0 + exp(-in));
+  float activationFunction(float in) {
+    return 1.0f / (1.0f + expf(-in));
   }
 };
 
@@ -179,7 +179,7 @@ void Neuron::AddOutgoingNeuron(wptr<Neuron> neuron) {
   impl->AddOutgoingNeuron(neuron);
 }
 
-void Neuron::UpdateWeights(double normScale, double rate) {
+void Neuron::UpdateWeights(float normScale, float rate) {
   impl->UpdateWeights(normScale, rate);
 }
 
@@ -191,22 +191,29 @@ void Neuron::CalculateOutput(void) {
   impl->CalculateOutput();
 }
 
-void Neuron::SetInput(double input) {
+void Neuron::SetInput(float input) {
   impl->SetInput(input);
 }
 
-void Neuron::SetError(double error) {
+void Neuron::SetError(float error) {
   impl->SetError(error);
 }
 
-double Neuron::GetInputWeight(Neuron *incoming) const {
+float Neuron::GetInputWeight(Neuron *incoming) const {
   return impl->GetInputWeight(incoming);
 }
 
-double Neuron::GetOutput(void) const {
+float Neuron::GetOutput(void) const {
   return impl->GetOutput();
 }
 
-double Neuron::GetError(void) const {
+float Neuron::GetError(void) const {
   return impl->GetError();
+}
+
+std::ostream& Neuron::Output(std::ostream& stream) {
+  for (const auto& c : impl->incoming) {
+    stream << c.weight << " ";
+  }
+  return stream;
 }

@@ -6,10 +6,10 @@
 
 
 struct TrainingSample {
-    vector<double> input;
-    vector<double> expectedOutput;
+    vector<float> input;
+    vector<float> expectedOutput;
 
-    TrainingSample(const vector<double> &input, const vector<double> expectedOutput) :
+    TrainingSample(const vector<float> &input, const vector<float> expectedOutput) :
       input(input), expectedOutput(expectedOutput) {}
 };
 
@@ -20,8 +20,10 @@ public:
   Network(const vector<unsigned> &layerSizes);
   virtual ~Network();
 
-  vector<double> Process(const vector<double> &input);
-  void Train(const vector<TrainingSample> &samples, double learnRate);
+  vector<float> Process(const vector<float> &input);
+  void Train(const vector<TrainingSample> &samples, float learnRate);
+
+  std::ostream& Output(std::ostream& stream);
 
 private:
   struct NetworkImpl;
